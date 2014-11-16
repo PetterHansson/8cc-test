@@ -11,7 +11,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#include "strings.h"
 #include "8cc.h"
 
 // The largest alignment requirement on x86-64. When we are allocating memory
@@ -29,9 +29,11 @@ SourceLoc *source_loc;
 // Objects representing various scopes. Did you know C has so many different
 // scopes? You can use the same name for global variable, local variable,
 // struct/union/enum tag, and goto label!
-static Map *globalenv = &EMPTY_MAP;
+static Map _globalenv;
+static Map *globalenv = &_globalenv;
 static Map *localenv;
-static Map *tags = &EMPTY_MAP;
+static Map _tags;
+static Map *tags = &_tags;
 static Map *labels;
 
 static Vector *toplevels;
@@ -639,6 +641,7 @@ int eval_intexpr(Node *node) {
     error:
         error("Integer expression expected, but got %s", a2s(node));
     }
+	return 0;
 }
 
 static int read_intexpr() {
@@ -649,17 +652,41 @@ static int read_intexpr() {
  * Numeric literal
  */
 
-#define STRTOINT(f, nptr, end, base)                         \
-    ({                                                       \
-        errno = 0;                                           \
-        char *endptr;                                        \
-        long r = f((nptr), &endptr, (base));                 \
-        if (errno)                                           \
-            error("invalid constant: %s", strerror(errno));  \
-        if (endptr != (end))                                 \
-            error("invalid digit '%c'", *endptr);            \
-        r;                                                   \
-    })
+static long STRTOINT(const char * nptr, const char * end, int base)
+{
+		errno = 0;
+        char *endptr;
+		long r = strtol((nptr), &endptr, (base));
+        if (errno)
+            error("invalid constant: %s", strerror(errno));
+        if (endptr != (end))
+            error("invalid digit '%c'", *endptr);
+        return r;
+}
+
+static unsigned long STRTOUINT(const char * nptr, const char * end, int base)
+{
+	errno = 0;
+	char *endptr;
+	unsigned long r = strtoul((nptr), &endptr, (base));
+	if (errno)
+		error("invalid constant: %s", strerror(errno));
+	if (endptr != (end))
+		error("invalid digit '%c'", *endptr);
+	return r;
+}
+
+static unsigned long long STRTOULL(const char * nptr, const char * end, int base)
+{
+	errno = 0;
+	char *endptr;
+	unsigned long long r = strtoull((nptr), &endptr, (base));
+	if (errno)
+		error("invalid constant: %s", strerror(errno));
+	if (endptr != (end))
+		error("invalid digit '%c'", *endptr);
+	return r;
+}
 
 static Node *read_int(char *s) {
     char *p = s;
@@ -685,26 +712,26 @@ static Node *read_int(char *s) {
         p++;
     }
     if (!strcasecmp(p, "u"))
-        return ast_inttype(type_uint, STRTOINT(strtol, s, p, base));
+        return ast_inttype(type_uint, STRTOINT(s, p, base));
     if (!strcasecmp(p, "l"))
-        return ast_inttype(type_long, STRTOINT(strtol, s, p, base));
+        return ast_inttype(type_long, STRTOINT(s, p, base));
     if (!strcasecmp(p, "ul") || !strcasecmp(p, "lu"))
-        return ast_inttype(type_ulong, STRTOINT(strtoul, s, p, base));
+        return ast_inttype(type_ulong, STRTOUINT(s, p, base));
     if (!strcasecmp(p, "ll"))
-        return ast_inttype(type_llong, STRTOINT(strtol, s, p, base));
+        return ast_inttype(type_llong, STRTOINT(s, p, base));
     if (!strcasecmp(p, "ull") || !strcasecmp(p, "llu"))
-        return ast_inttype(type_ullong, STRTOINT(strtoul, s, p, base));
+        return ast_inttype(type_ullong, STRTOUINT(s, p, base));
     if (*p != '\0')
         error("invalid suffix '%c': %s", *p, s);
     // C11 6.4.4.1p5: decimal constant type is int, long, or long long.
     // In 8cc, long and long long are the same size.
     if (base == 10) {
-        long val = STRTOINT(strtol, digits, p, base);
+        long val = STRTOINT(digits, p, base);
         Type *t = !(val & ~(long)INT_MAX) ? type_int : type_long;
         return ast_inttype(t, val);
     }
     // Octal or hexadecimal constant type may be unsigned.
-    unsigned long val = STRTOINT(strtoull, digits, p, base);
+	unsigned long val = STRTOULL(digits, p, base);
     Type *t = !(val & ~(unsigned long)INT_MAX) ? type_int
         : !(val & ~(unsigned long)UINT_MAX) ? type_uint
         : !(val & ~(unsigned long)LONG_MAX) ? type_long
@@ -713,26 +740,38 @@ static Node *read_int(char *s) {
 }
 
 
-#define STRTOFLOAT(f, nptr, end)                                \
-    ({                                                          \
-        errno = 0;                                              \
-        char *endptr;                                           \
-        double r = f((nptr), &endptr);                          \
-        if (errno)                                              \
-            error("invalid constant: %s", strerror(errno));     \
-        if (endptr != (end))                                    \
-            error("invalid digit '%c' in %s", *endptr, nptr);   \
-        r;                                                      \
-    })
+static float STRTOFLOAT(const char * nptr, const char * end)
+{
+    errno = 0;
+    char *endptr;
+	float r = strtof((nptr), &endptr);
+    if (errno)
+        error("invalid constant: %s", strerror(errno));
+    if (endptr != (end))
+        error("invalid digit '%c' in %s", *endptr, nptr);
+    return r;
+}
+
+static double STRTODOUBLE(const char * nptr, const char * end)
+{
+	errno = 0;
+	char *endptr;
+	double r = strtod((nptr), &endptr);
+	if (errno)
+		error("invalid constant: %s", strerror(errno));
+	if (endptr != (end))
+		error("invalid digit '%c' in %s", *endptr, nptr);
+	return r;
+}
 
 static Node *read_float(char *s) {
     char *last = s + strlen(s) - 1;
     // C11 6.4.4.2p4: the default type for flonum is double.
     if (strchr("lL", *last))
-        return ast_floattype(type_ldouble, STRTOFLOAT(strtof, s, last));
+        return ast_floattype(type_ldouble, STRTODOUBLE(s, last));
     if (strchr("fF", *last))
-        return ast_floattype(type_float, STRTOFLOAT(strtof, s, last));
-    return ast_floattype(type_double, STRTOFLOAT(strtod, s, last + 1));
+        return ast_floattype(type_float, STRTOFLOAT(s, last));
+    return ast_floattype(type_double, STRTODOUBLE(s, last + 1));
 }
 
 static Node *read_number(char *s) {
@@ -963,6 +1002,7 @@ static Node *read_primary_expr(void) {
     default:
         error("internal error: unknown token kind: %d", tok->kind);
     }
+	return 0;
 }
 
 static Node *read_subscript_expr(Node *node) {
@@ -2079,6 +2119,7 @@ static Type *read_decl_spec(int *rsclass) {
     return ty;
  err:
     error("type mismatch: %s", t2s(tok));
+	return 0;
 }
 
 /*

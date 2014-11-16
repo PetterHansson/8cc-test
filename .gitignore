@@ -10,3 +10,9 @@ nqueen
 *.bin
 *.bin2
 *~
+*.sdf
+*.opensdf
+*.suo
+*.user
+Debug/
+Release/

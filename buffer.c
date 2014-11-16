@@ -46,7 +46,7 @@ void buf_printf(Buffer *b, char *fmt, ...) {
         va_start(args, fmt);
         int written = vsnprintf(b->body + b->len, avail, fmt, args);
         va_end(args);
-        if (avail <= written) {
+        if (written < 0 || avail <= written) {
             realloc_body(b);
             continue;
         }
@@ -63,7 +63,7 @@ char *vformat(char *fmt, va_list ap) {
         va_copy(aq, ap);
         int written = vsnprintf(b->body + b->len, avail, fmt, aq);
         va_end(aq);
-        if (avail <= written) {
+        if (written < 0 || avail <= written) {
             realloc_body(b);
             continue;
         }

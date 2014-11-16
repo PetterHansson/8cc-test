@@ -16,9 +16,11 @@ typedef struct {
 } File;
 
 static bool at_bol = true;
-static Vector *buffer = &EMPTY_VECTOR;
+static Vector _buffer;
+static Vector *buffer = &_buffer;
 static Vector *altbuffer = NULL;
-static Vector *file_stack = &EMPTY_VECTOR;
+static Vector _file_stack;
+static Vector *file_stack = &_file_stack;
 static File *file;
 static int line_mark = -1;
 static int column_mark = -1;
@@ -343,9 +345,31 @@ static int read_hex_char(void) {
         error("\\x is not followed by a hexadecimal character: %c", c);
     for (;; c = get()) {
         switch (c) {
-        case '0' ... '9': r = (r << 4) | (c - '0'); continue;
-        case 'a' ... 'f': r = (r << 4) | (c - 'a' + 10); continue;
-        case 'A' ... 'F': r = (r << 4) | (c - 'A' + 10); continue;
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			r = (r << 4) | (c - '0'); continue;
+		case 'a':
+		case 'b':
+		case 'c':
+		case 'd':
+		case 'e':
+		case 'f':
+			r = (r << 4) | (c - 'a' + 10); continue;
+		case 'A':
+		case 'B':
+		case 'C':
+		case 'D':
+		case 'E':
+		case 'F':
+			r = (r << 4) | (c - 'A' + 10); continue;
         default: unget(c); return r;
         }
     }
@@ -362,9 +386,31 @@ static int read_universal_char(int len) {
     for (int i = 0; i < len; i++) {
         char c = get();
         switch (c) {
-        case '0' ... '9': r = (r << 4) | (c - '0'); continue;
-        case 'a' ... 'f': r = (r << 4) | (c - 'a' + 10); continue;
-        case 'A' ... 'F': r = (r << 4) | (c - 'A' + 10); continue;
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			r = (r << 4) | (c - '0'); continue;
+		case 'a':
+		case 'b':
+		case 'c':
+		case 'd':
+		case 'e':
+		case 'f':
+			r = (r << 4) | (c - 'a' + 10); continue;
+		case 'A':
+		case 'B':
+		case 'C':
+		case 'D':
+		case 'E':
+		case 'F':
+			r = (r << 4) | (c - 'A' + 10); continue;
         default: error("invalid universal character: %c", c);
         }
     }
@@ -386,7 +432,14 @@ static int read_escaped_char(void) {
     case 't': return '\t';
     case 'v': return '\v';
     case 'e': return '\033'; // '\e' is GNU extension
-    case '0' ... '7':
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
         return read_octal_char(c);
     case 'x':
         return read_hex_char();
@@ -472,6 +525,8 @@ static Token *read_rep2(char expect1, int t1, char expect2, int t2, char els) {
 static Token *do_read_token(void) {
     mark_input();
     int c = get();
+	if (c >= 'a' && c <= 'z' && c != 'u' || c >= 'A' && c <= 'Z' && c != 'U' || c == '_' || c == '$')
+		return read_ident(c);
     switch (c) {
     case ' ': case '\t': case '\v': case '\f':
         skip_space();
@@ -494,10 +549,16 @@ static Token *do_read_token(void) {
             unget('8');
         }
         return read_ident(c);
-    case 'a' ... 't': case 'v' ... 'z': case 'A' ... 'K':
-    case 'M' ... 'T': case 'V' ... 'Z': case '_': case '$':
-        return read_ident(c);
-    case '0' ... '9':
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
         return read_number(c);
     case '/':
         if (next('/')) {

@@ -4,8 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#if WIN32
+#include "XGetOpt.h"
+#else
+//#include <sys/wait.h>
+//#include <unistd.h>
+#endif
 #include "8cc.h"
 
 static char *inputfile;
@@ -15,7 +19,8 @@ static bool cpponly;
 static bool dumpasm;
 static bool dontlink;
 static Buffer *cppdefs;
-static Vector *tmpfiles = &EMPTY_VECTOR;
+static Vector _tmpfiles;
+static Vector *tmpfiles = &_tmpfiles;
 
 static void usage(void) {
     fprintf(stderr,
@@ -65,8 +70,8 @@ static FILE *open_output_file(void) {
             outputfile = replace_suffix(inputfile, 's');
         } else {
             outputfile = format("/tmp/8ccXXXXXX.s");
-            if (!mkstemps(outputfile, 2))
-                perror("mkstemps");
+            if (!mkstemp(outputfile, 2))
+                perror("mkstemp");
             vec_push(tmpfiles, outputfile);
         }
     }
@@ -86,8 +91,8 @@ static void parse_warnings_arg(char *s) {
 }
 
 static void parse_debug_arg(char *s) {
-    char *tok, *save;
-    while ((tok = strtok_r(s, ",", &save)) != NULL) {
+    char *tok;
+    while ((tok = strtok(s, ",")) != NULL) {
         s = NULL;
         if (!strcmp(tok, "cpp"))
             debug_cpp = true;
@@ -226,7 +231,8 @@ int main(int argc, char **argv) {
 
     if (!dumpast && !dumpasm) {
         char *objfile = replace_suffix(inputfile, 'o');
-        pid_t pid = fork();
+		//TODO: must invoke assembler differently, can't assume as
+        /*pid_t pid = fork();
         if (pid < 0) perror("fork");
         if (pid == 0) {
             execlp("as", "as", "-o", objfile, "-c", outputfile, (char *)NULL);
@@ -235,7 +241,7 @@ int main(int argc, char **argv) {
         int status;
         waitpid(pid, &status, 0);
         if (status < 0)
-            error("as failed");
+            error("as failed");*/
     }
     return 0;
 }

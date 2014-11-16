@@ -8,7 +8,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include "8cc.h"
 
 bool dumpstack = false;
@@ -18,13 +18,16 @@ static char *REGS[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static char *SREGS[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
 static char *MREGS[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 static int TAB = 8;
-static Vector *functions = &EMPTY_VECTOR;
+static Vector _functions;
+static Vector *functions = &_functions;
 static int stackpos;
 static int numgp;
 static int numfp;
 static FILE *outputfp;
-static Map *source_files = &EMPTY_MAP;
-static Map *source_lines = &EMPTY_MAP;
+static Map _source_files;
+static Map *source_files = &_source_files;
+static Map _source_lines;
+static Map *source_lines = &_source_lines;
 static char *last_loc = "";
 
 static void emit_addr(Node *node);

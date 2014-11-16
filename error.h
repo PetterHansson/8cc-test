@@ -15,7 +15,11 @@ extern bool warning_is_error;
 #define warn(...)  warnf(__FILE__, __LINE__, __VA_ARGS__)
 
 #ifndef __8cc__
+#ifndef _MSC_VER
 #define NORETURN __attribute__((noreturn))
+#else
+#define NORETURN
+#endif
 #else
 #define NORETURN
 #endif

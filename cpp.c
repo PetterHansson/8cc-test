@@ -10,20 +10,34 @@
 #include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
-#include <libgen.h>
+//#include <libgen.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include "8cc.h"
 
+#if WIN32
+static char _dirname_path[_MAX_DIR];
+#define dirname(P) (_splitpath(P,_dirname_path, 0, 0, 0), _dirname_path)
+#define realpath(N,R) _fullpath((R),(N),_MAX_PATH)
+#define PATH_MAX	_MAX_PATH
+#define BUILD_DIR "."
+#endif
+
 bool debug_cpp;
-static Map *macros = &EMPTY_MAP;
-static Map *imported = &EMPTY_MAP;
-static Map *once = &EMPTY_MAP;
-static Map *keywords = &EMPTY_MAP;
-static Vector *cond_incl_stack = &EMPTY_VECTOR;
-static Vector *std_include_path = &EMPTY_VECTOR;
+static Map _macros;
+static Map *macros = &_macros;
+static Map _imported;
+static Map *imported = &_imported;
+static Map _once;
+static Map *once = &_once;
+static Map _keywords;
+static Map *keywords = &_keywords;
+static Vector _cond_incl_stack;
+static Vector *cond_incl_stack = &_cond_incl_stack;
+static Vector _std_include_path;
+static Vector *std_include_path = &_std_include_path;
 static Token *cpp_token_zero = &(Token){ .kind = TNUMBER, .sval = "0" };
 static Token *cpp_token_one = &(Token){ .kind = TNUMBER, .sval = "1" };
 
@@ -199,6 +213,7 @@ static Vector *do_read_args(Macro *macro) {
 }
 
 static Vector *read_args(Macro *macro) {
+	static Vector empty_vec;
     Vector *args = do_read_args(macro);
     if (macro->is_varg) {
         if (vec_len(args) == macro->nargs - 1)
@@ -208,10 +223,10 @@ static Vector *read_args(Macro *macro) {
         return args;
     }
     if (!macro->is_varg && vec_len(args) != macro->nargs) {
-        if (macro->nargs == 0 &&
-            vec_len(args) == 1 &&
-            vec_len(vec_get(args, 0)) == 0)
-            return &EMPTY_VECTOR;
+		if (macro->nargs == 0 &&
+			vec_len(args) == 1 &&
+			vec_len(vec_get(args, 0)) == 0)
+			return &empty_vec;
         error("Macro argument number does not match");
     }
     return args;
@@ -433,6 +448,7 @@ static Token *read_expand(void) {
     default:
         error("internal error");
     }
+	return 0;
 }
 
 static bool read_funclike_macro_params(Map *param) {
@@ -688,7 +704,11 @@ static char *get_realpath(char *path) {
 }
 
 static bool try_include(char *dir, char *filename, bool isimport) {
+#if WIN32
+	char *path = format("%s\\%s", dir, filename);
+#else
     char *path = format("%s/%s", dir, filename);
+#endif
     char *real = NULL;
     if (isimport || map_len(once) > 0)
         real = get_realpath(path);
@@ -806,8 +826,7 @@ static struct tm *gettime(void) {
         return &tm;
     init = true;
     time_t timet = time(NULL);
-    localtime_r(&timet, &tm);
-    return &tm;
+    return localtime(&timet);
 }
 
 static void make_token_pushback(Token *tmpl, int kind, char *sval) {
@@ -831,8 +850,7 @@ static void handle_time_macro(Token *tmpl) {
 }
 
 static void handle_timestamp_macro(Token *tmpl) {
-    char buf[30];
-    asctime_r(gettime(), buf);
+    char * buf = asctime(gettime());
     // Remove the trailing '\n'.
     buf[strlen(buf) - 1] = '\0';
     make_token_pushback(tmpl, TSTRING, format("%s", buf));
@@ -894,12 +912,16 @@ static void init_keywords(void) {
 }
 
 static void init_predefined_macros(void) {
+#if WIN32
+	vec_push(std_include_path, "C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\include");
+#else
     vec_push(std_include_path, "/usr/include/x86_64-linux-gnu");
     vec_push(std_include_path, "/usr/include/linux");
     vec_push(std_include_path, "/usr/include");
     vec_push(std_include_path, "/usr/local/include");
     vec_push(std_include_path, "/usr/local/lib/8cc/include");
     vec_push(std_include_path, BUILD_DIR "/include");
+#endif
 
     define_special_macro("__DATE__", handle_date_macro);
     define_special_macro("__TIME__", handle_time_macro);
