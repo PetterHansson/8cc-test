@@ -281,4 +281,6 @@ extern void emit_toplevel(Node *v);
 extern void set_output_file(FILE *fp);
 extern void close_output_file(void);
 
+int mkstemp(char *tmpl);
+
 #endif

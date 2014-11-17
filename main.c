@@ -3,10 +3,10 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #if WIN32
-#include "XGetOpt.h"
+#include "XGetopt.h"
 #else
+//#include <sys/types.h>
 //#include <sys/wait.h>
 //#include <unistd.h>
 #endif
@@ -18,6 +18,7 @@ static bool dumpast;
 static bool cpponly;
 static bool dumpasm;
 static bool dontlink;
+static bool dontclean;
 static Buffer *cppdefs;
 static Vector _tmpfiles;
 static Vector *tmpfiles = &_tmpfiles;
@@ -44,6 +45,7 @@ static void usage(void) {
             "  -O<number>        Does nothing at this moment\n"
             "  -m64              Output 64-bit code (default)\n"
             "  -w                Disable all warnings\n"
+			"  -y                Don't delete temporary files\n"
             "  -h                print this help\n"
             "\n"
             "One of -a, -c, -E or -S must be specified.\n\n");
@@ -69,8 +71,12 @@ static FILE *open_output_file(void) {
         if (dumpasm) {
             outputfile = replace_suffix(inputfile, 's');
         } else {
+#if WIN32
+			outputfile = format("8ccXXXXXX.s");
+#else
             outputfile = format("/tmp/8ccXXXXXX.s");
-            if (!mkstemp(outputfile, 2))
+#endif
+            if (!mkstemp(outputfile))
                 perror("mkstemp");
             vec_push(tmpfiles, outputfile);
         }
@@ -120,7 +126,7 @@ static void parse_m_arg(char *s) {
 static void parseopt(int argc, char **argv) {
     cppdefs = make_buffer();
     for (;;) {
-        int opt = getopt(argc, argv, "I:ED:O:SU:W:acd:f:gm:o:hw");
+        int opt = getopt(argc, argv, "I:ED:O:SU:W:acd:f:gm:o:hwy");
         if (opt == -1)
             break;
         switch (opt) {
@@ -154,6 +160,9 @@ static void parseopt(int argc, char **argv) {
         case 'c':
             dontlink = true;
             break;
+		case 'y':
+			dontclean = true;
+			break;
         case 'd':
             parse_debug_arg(optarg);
             break;
@@ -205,11 +214,11 @@ static void preprocess(void) {
 
 int main(int argc, char **argv) {
     setbuf(stdout, NULL);
-    if (atexit(delete_temp_files))
-        perror("atexit");
     cpp_init();
     parse_init();
     parseopt(argc, argv);
+	if (!dontclean && atexit(delete_temp_files))
+		perror("atexit");
     if (buf_len(cppdefs) > 0)
         cpp_eval(buf_body(cppdefs));
     lex_init(inputfile);

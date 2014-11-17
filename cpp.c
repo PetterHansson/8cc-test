@@ -154,6 +154,19 @@ static bool next(int id) {
     return false;
 }
 
+static void skip_rest_of_line(int current_line)
+{
+	for (;;)
+	{
+		Token * tok = lex();
+		if (!tok || tok->line != current_line)
+		{
+			unget_token(tok);
+			return;
+		}
+	}
+}
+
 static void propagate_space(Vector *tokens, Token *tmpl) {
     if (vec_len(tokens) == 0)
         return;
@@ -745,7 +758,7 @@ static void read_include(bool isimport) {
  * #pragma
  */
 
-static void parse_pragma_operand(char *s) {
+static void parse_pragma_operand(char *s, int line) {
     if (!strcmp(s, "once")) {
         map_put(once, get_realpath(get_current_file()), (void *)1);
     } else if (!strcmp(s, "enable_warning")) {
@@ -753,13 +766,14 @@ static void parse_pragma_operand(char *s) {
     } else if (!strcmp(s, "disable_warning")) {
         enable_warning = false;
     } else {
-        error("Unknown #pragma: %s", s);
+		if (line >= 0) skip_rest_of_line(line);
+        warn("Unknown #pragma: %s", s);
     }
 }
 
 static void read_pragma(void) {
     Token *tok = read_ident();
-    parse_pragma_operand(tok->sval);
+    parse_pragma_operand(tok->sval, tok->line);
 }
 
 /*
@@ -836,6 +850,12 @@ static void make_token_pushback(Token *tmpl, int kind, char *sval) {
     unget_token(tok);
 }
 
+static void handle_nothing(Token *tmpl) { }
+static void handle_declspec(Token * tmpl)
+{
+	if (lex()) { if (lex()) lex(); }
+}
+
 static void handle_date_macro(Token *tmpl) {
     struct tm *now = gettime();
     char *month[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
@@ -870,7 +890,7 @@ static void handle_pragma_macro(Token *tmpl) {
     if (!operand || operand->kind != TSTRING)
         error("_Pragma takes a string literal, but got %s", t2s(operand));
     expect(')');
-    parse_pragma_operand(operand->sval);
+    parse_pragma_operand(operand->sval, -1);
     make_token_pushback(tmpl, TNUMBER, "1");
 }
 
@@ -914,6 +934,7 @@ static void init_keywords(void) {
 static void init_predefined_macros(void) {
 #if WIN32
 	vec_push(std_include_path, "C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\include");
+	vec_push(std_include_path, "D:\\8cc\\8cc-test\\tempinclude");
 #else
     vec_push(std_include_path, "/usr/include/x86_64-linux-gnu");
     vec_push(std_include_path, "/usr/include/linux");
@@ -934,12 +955,27 @@ static void init_predefined_macros(void) {
     define_special_macro("__INCLUDE_LEVEL__", handle_include_level_macro);
     define_special_macro("__TIMESTAMP__", handle_timestamp_macro);
 
+#if WIN32
+	define_special_macro("_W64", handle_nothing);
+	define_special_macro("__cdecl", handle_nothing);
+	define_special_macro("__declspec", handle_declspec);
+	define_special_macro("__inline", handle_nothing);
+
+	char *predefined[] = {
+		"__8cc__", "__amd64", "__amd64__", "__x86_64", "__x86_64__", "_WIN64",
+		"_CRT_SECURE_NO_WARNINGS", "_CRT_OBSOLETE_NO_WARNINGS",
+		"_WIN32", "WIN32", "_LP64", "__LP64__", "__ELF__", "__STDC__", "__STDC_HOSTED__",
+		"__STDC_NO_ATOMICS__", "__STDC_NO_COMPLEX__", "__STDC_NO_THREADS__", "__STDC_NO_VLA__",
+		};
+	define_obj_macro("__STDC_WANT_SECURE_LIB__", make_number("0"));
+#else
     char *predefined[] = {
         "__8cc__", "__amd64", "__amd64__", "__x86_64", "__x86_64__",
         "linux", "__linux", "__linux__", "__gnu_linux__", "__unix", "__unix__",
         "_LP64", "__LP64__", "__ELF__", "__STDC__", "__STDC_HOSTED__",
         "__STDC_NO_ATOMICS__", "__STDC_NO_COMPLEX__", "__STDC_NO_THREADS__",
         "__STDC_NO_VLA__", };
+#endif
 
     for (int i = 0; i < sizeof(predefined) / sizeof(*predefined); i++)
         define_obj_macro(predefined[i], cpp_token_one);

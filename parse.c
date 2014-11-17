@@ -2051,14 +2051,14 @@ static Type *read_decl_spec(int *rsclass) {
         case KNORETURN:   continue;
         case KVOID:       SET(kind, kvoid); continue;
         case KBOOL:       SET(kind, kbool); continue;
-        case KCHAR:       SET(kind, kchar); continue;
-        case KINT:        SET(kind, kint); continue;
+		case KCHAR: case KCHAR2: SET(kind, kchar); continue;
+		case KINT: case KINT2: SET(kind, kint); continue;
         case KFLOAT:      SET(kind, kfloat); continue;
         case KDOUBLE:     SET(kind, kdouble); continue;
         case KSIGNED:
         case K__SIGNED__: SET(sig, ksigned); continue;
         case KUNSIGNED:   SET(sig, kunsigned); continue;
-        case KSHORT:      SET(size, kshort); continue;
+		case KSHORT: case KSHORT2: SET(size, kshort); continue;
         case KSTRUCT:     SET(usertype, read_struct_def()); continue;
         case KUNION:      SET(usertype, read_union_def()); continue;
         case KENUM:       SET(usertype, read_enum_def()); continue;
@@ -2073,7 +2073,7 @@ static Type *read_decl_spec(int *rsclass) {
                 align = val;
             continue;
         }
-        case KLONG: {
+		case KLONG: case KLONG2: {
             if (size == 0) SET(size, klong);
             else if (size == klong) size = kllong;
             else goto err;
