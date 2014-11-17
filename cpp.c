@@ -958,8 +958,10 @@ static void init_predefined_macros(void) {
     define_special_macro("__TIMESTAMP__", handle_timestamp_macro);
 
 #if WIN32
+	//TODO: these are shortcuts to keywords that should be implemented differently or at least have more efficient definition
 	define_special_macro("_W64", handle_nothing);
 	define_special_macro("__cdecl", handle_nothing);
+	define_special_macro("__stdcall", handle_nothing);
 	define_special_macro("__declspec", handle_declspec);
 	define_special_macro("__inline", handle_nothing);
 

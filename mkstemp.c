@@ -11,7 +11,54 @@ version 2.1 of the License, or (at your option) any later version.  */
 #include <io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <Windows.h>
+#include <string.h>
+
+//
+//  File System time stamps are represented with the following structure:
+//
+
+
+#ifndef _FILETIME_
+#define _FILETIME_
+typedef struct _FILETIME {
+	unsigned dwLowDateTime;
+	unsigned dwHighDateTime;
+} FILETIME, *PFILETIME, *LPFILETIME;
+#endif
+
+//
+// System time is represented with the following structure:
+//
+
+typedef struct _SYSTEMTIME {
+	unsigned short wYear;
+	unsigned short wMonth;
+	unsigned short wDayOfWeek;
+	unsigned short wDay;
+	unsigned short wHour;
+	unsigned short wMinute;
+	unsigned short wSecond;
+	unsigned short wMilliseconds;
+} SYSTEMTIME, *PSYSTEMTIME, *LPSYSTEMTIME;
+
+int
+__stdcall
+SystemTimeToFileTime(
+const SYSTEMTIME * lpSystemTime,
+LPFILETIME lpFileTime
+);
+
+void
+__stdcall
+GetSystemTime(
+LPSYSTEMTIME lpSystemTime
+);
+
+unsigned
+__stdcall
+GetCurrentThreadId(
+void
+);
 
 static const char letters[] =
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

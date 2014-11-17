@@ -8,9 +8,9 @@
 
 #define MIN_SIZE 8
 
-/*static int max(int a, int b) {
-    return a > b ? a : b;
-}*/
+#ifndef max
+#define max(a,b)    (((a) > (b)) ? (a) : (b))
+#endif
 
 static int roundup(int n) {
     if (n == 0)
