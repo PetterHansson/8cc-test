@@ -1234,10 +1234,18 @@ static void emit_data_addr(Node *operand, int depth) {
     switch (operand->kind) {
     case AST_LVAR: {
         char *label = make_label();
+#if WIN32
+		emit(".data");
+#else
         emit(".data %d", depth + 1);
+#endif
         emit_label(label);
         do_emit_data(operand->lvarinit, operand->ty->size, 0, depth + 1);
+#if WIN32
+		emit(".data");
+#else
         emit(".data %d", depth);
+#endif
         emit(".quad %s", label);
         return;
     }
@@ -1251,10 +1259,18 @@ static void emit_data_addr(Node *operand, int depth) {
 
 static void emit_data_charptr(char *s, int depth) {
     char *label = make_label();
+#if WIN32
+	emit(".data");
+#else
     emit(".data %d", depth + 1);
+#endif
     emit_label(label);
     emit(".string \"%s\"", quote_cstring(s));
+#if WIN32
+	emit(".data");
+#else
     emit(".data %d", depth);
+#endif
     emit(".quad %s", label);
 }
 
@@ -1342,7 +1358,11 @@ static void do_emit_data(Vector *inits, int size, int off, int depth) {
 
 static void emit_data(Node *v, int off, int depth) {
     SAVE;
+#if WIN32
+	emit(".data");
+#else
     emit(".data %d", depth);
+#endif
     if (!v->declvar->ty->isstatic)
         emit_noindent(".global %s", v->declvar->glabel);
     emit_noindent("%s:", v->declvar->glabel);
