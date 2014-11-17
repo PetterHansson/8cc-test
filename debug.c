@@ -99,7 +99,7 @@ static void literal2s(Buffer * b, Node * node)
 		buf_printf(b, "%d", node->ival);
 		break;
 	case KIND_LONG:
-		buf_printf(b, "%ldL", node->ival);
+		buf_printf(b, "%lldL", node->ival);
 		break;
 	case KIND_FLOAT:
 	case KIND_DOUBLE:

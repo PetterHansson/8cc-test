@@ -26,7 +26,7 @@ static Bucket *make_bucket(char *key, void *val, void *next) {
 
 static uint32_t hash(char *p) {
     // FNV hash
-    uint32_t r = 2166136261;
+    uint32_t r = 2166136261u;
     for (; *p; p++) {
         r ^= *p;
         r *= 16777619;

@@ -174,7 +174,7 @@ static Node *ast_binop(Type *ty, int kind, Node *left, Node *right) {
     return r;
 }
 
-static Node *ast_inttype(Type *ty, long val) {
+static Node *ast_inttype(Type *ty, long long val) {
     return make_ast(&(Node){ AST_LITERAL, ty, .ival = val });
 }
 
@@ -676,6 +676,18 @@ static unsigned long STRTOUINT(const char * nptr, const char * end, int base)
 	return r;
 }
 
+static long long STRTOLL(const char * nptr, const char * end, int base)
+{
+	errno = 0;
+	char *endptr;
+	long long r = strtoll((nptr), &endptr, (base));
+	if (errno)
+		error("invalid constant: %s", strerror(errno));
+	if (endptr != (end))
+		error("invalid digit '%c'", *endptr);
+	return r;
+}
+
 static unsigned long long STRTOULL(const char * nptr, const char * end, int base)
 {
 	errno = 0;
@@ -712,15 +724,15 @@ static Node *read_int(char *s) {
         p++;
     }
     if (!strcasecmp(p, "u"))
-        return ast_inttype(type_uint, STRTOINT(s, p, base));
+        return ast_inttype(type_uint, STRTOUINT(s, p, base));
     if (!strcasecmp(p, "l"))
-        return ast_inttype(type_long, STRTOINT(s, p, base));
+        return ast_inttype(type_long, STRTOLL(s, p, base));
     if (!strcasecmp(p, "ul") || !strcasecmp(p, "lu"))
-        return ast_inttype(type_ulong, STRTOUINT(s, p, base));
+		return ast_inttype(type_ulong, STRTOULL(s, p, base));
     if (!strcasecmp(p, "ll"))
-        return ast_inttype(type_llong, STRTOINT(s, p, base));
+		return ast_inttype(type_llong, STRTOLL(s, p, base));
     if (!strcasecmp(p, "ull") || !strcasecmp(p, "llu"))
-        return ast_inttype(type_ullong, STRTOUINT(s, p, base));
+		return ast_inttype(type_ullong, STRTOULL(s, p, base));
     if (*p != '\0')
         error("invalid suffix '%c': %s", *p, s);
     // C11 6.4.4.1p5: decimal constant type is int, long, or long long.

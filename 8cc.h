@@ -141,7 +141,7 @@ typedef struct Node {
     SourceLoc *sourceLoc;
     union {
         // Char, int, or long
-        long ival;
+        long long ival;
         // Float or double
         struct {
             double fval;
