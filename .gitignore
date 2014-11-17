@@ -14,5 +14,7 @@ nqueen
 *.opensdf
 *.suo
 *.user
+*.exe
 Debug/
 Release/
+tempinclude/
