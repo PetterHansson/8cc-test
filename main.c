@@ -231,7 +231,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < vec_len(toplevels); i++) {
         Node *v = vec_get(toplevels, i);
         if (dumpast)
-            printf("%s", a2s(v));
+            printf("%s", a2s2(v));
         else
             emit_toplevel(v);
     }

@@ -274,6 +274,7 @@ extern bool is_flotype(Type *ty);
 extern bool debug_cpp;
 extern char *t2s(Token *tok);
 extern char *a2s(Node *node);
+extern char *a2s2(Node * node);
 extern char *c2s(Type *ty);
 
 // Gen
