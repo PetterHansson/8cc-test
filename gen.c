@@ -418,7 +418,7 @@ static void emit_to_bool(Type *ty) {
         emit("cmp $0, #rax");
         emit("setne #al");
     }
-    emit("movzb #al, #eax");
+    emit("movzx #al, #eax");
 }
 
 static void emit_comp(char *inst, char *usiginst, Node *node) {
@@ -444,7 +444,7 @@ static void emit_comp(char *inst, char *usiginst, Node *node) {
           emit("cmp #eax, #ecx");
     }
     emit("%s #al", node->left->ty->usig ? usiginst : inst);
-    emit("movzb #al, #eax");
+    emit("movzx #al, #eax");
 }
 
 static void emit_binop_int_arith(Node *node) {
@@ -1099,7 +1099,7 @@ static void emit_lognot(Node *node) {
     emit_expr(node->operand);
     emit("cmp $0, #rax");
     emit("sete #al");
-    emit("movzb #al, #eax");
+    emit("movzx #al, #eax");
 }
 
 static void emit_bitand(Node *node) {
@@ -1407,14 +1407,14 @@ static void push_func_params(Vector *params, int off) {
             if (ireg >= 6) {
                 if (v->ty->kind == KIND_BOOL) {
                     emit("mov %d(#rbp), #al", arg++ * 8);
-                    emit("movzb #al, #eax");
+                    emit("movzx #al, #eax");
                 } else {
                     emit("mov %d(#rbp), #rax", arg++ * 8);
                 }
                 push("rax");
             } else {
                 if (v->ty->kind == KIND_BOOL)
-                    emit("movzb #%s, #%s", SREGS[ireg], MREGS[ireg]);
+                    emit("movzx #%s, #%s", SREGS[ireg], MREGS[ireg]);
                 push(REGS[ireg++]);
             }
             off -= 8;
