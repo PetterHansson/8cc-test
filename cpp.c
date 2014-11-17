@@ -290,6 +290,7 @@ static void paste(Buffer *b, Token *tok) {
         buf_printf(b, "%s", tok->sval);
         return;
     case TKEYWORD:
+	case TSTRING:
         buf_printf(b, "%s", t2s(tok));
         return;
     default:
@@ -302,7 +303,8 @@ static Token *glue_tokens(Token *t0, Token *t1) {
     paste(b, t0);
     paste(b, t1);
     Token *r = copy_token(t0);
-    r->kind = isdigit(buf_body(b)[0]) ? TNUMBER : TIDENT;
+	char * body = buf_body(b);
+	r->kind = isdigit(body[0]) ? TNUMBER : ((body[0] == '"' || body[1] == '"')? TSTRING : TIDENT);
     r->sval = buf_body(b);
     return r;
 }
