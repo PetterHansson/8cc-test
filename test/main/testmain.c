@@ -79,5 +79,9 @@ void fexpectl(char *file, int line, long a, long b) {
 int main() {
     testmain();
     printf("OK\n");
+	//TODO: main isn't being handled correctly, hence requirement for exit and flush. need to check what crt should do
+	fflush(stdout);
+	fflush(stderr);
+	exit(0);
     return 0;
 }

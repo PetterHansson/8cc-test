@@ -3,6 +3,7 @@ gen?
 *.o
 *.obj
 *.dblite
+*.test
 *.o2
 *.s
 tmp.*
