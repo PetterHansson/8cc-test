@@ -83,8 +83,5 @@
     <ClCompile Include="strings.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mkstemp.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

@@ -104,7 +104,6 @@
     <ClCompile Include="lex.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="map.c" />
-    <ClCompile Include="mkstemp.c" />
     <ClCompile Include="parse.c" />
     <ClCompile Include="strings.c" />
     <ClCompile Include="vector.c" />

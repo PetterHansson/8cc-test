@@ -67,20 +67,21 @@ static char *replace_suffix(char *filename, char suffix) {
 }
 
 static FILE *open_output_file(void) {
+#if WIN32
+	outputfile = replace_suffix(inputfile, 's');
+	if (!dumpasm) vec_push(tmpfiles, outputfile);
+#else
     if (!outputfile) {
         if (dumpasm) {
             outputfile = replace_suffix(inputfile, 's');
         } else {
-#if WIN32
-			outputfile = format("8ccXXXXXX.s");
-#else
             outputfile = format("/tmp/8ccXXXXXX.s");
-#endif
             if (!mkstemp(outputfile))
                 perror("mkstemp");
             vec_push(tmpfiles, outputfile);
         }
     }
+#endif
     if (!strcmp(outputfile, "-"))
         return stdout;
     FILE *fp = fopen(outputfile, "w");
@@ -240,8 +241,12 @@ int main(int argc, char **argv) {
 
     if (!dumpast && !dumpasm) {
         char *objfile = replace_suffix(inputfile, 'o');
-		//TODO: must invoke assembler differently, can't assume as
-        /*pid_t pid = fork();
+#if WIN32
+		char command[1024];
+		sprintf_s(command, sizeof(command), "vsyasm -p gas -m amd64 -g dwarf2 -o %s %s", objfile, outputfile);
+		if (system(command)) error("vsyasm failed");
+#else
+        pid_t pid = fork();
         if (pid < 0) perror("fork");
         if (pid == 0) {
             execlp("as", "as", "-o", objfile, "-c", outputfile, (char *)NULL);
@@ -250,7 +255,8 @@ int main(int argc, char **argv) {
         int status;
         waitpid(pid, &status, 0);
         if (status < 0)
-            error("as failed");*/
+            error("as failed");
+#endif
     }
     return 0;
 }
