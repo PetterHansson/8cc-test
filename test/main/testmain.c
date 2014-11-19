@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 void testmain(void);
 
@@ -28,7 +27,7 @@ void print(char *s) {
 }
 
 void printfail(void) {
-    printf(isatty(fileno(stdout)) ? "\e[1;31mFailed\e[0m\n" : "Failed\n");
+    printf("Failed\n");
 }
 
 void ffail(char *file, int line, char *msg) {
@@ -79,6 +78,6 @@ void fexpectl(char *file, int line, long a, long b) {
 
 int main() {
     testmain();
-    printf(isatty(fileno(stdout)) ? "\e[32mOK\e[0m\n" : "OK\n");
+    printf("OK\n");
     return 0;
 }
