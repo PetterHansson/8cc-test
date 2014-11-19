@@ -1,6 +1,8 @@
 8cc
 gen?
 *.o
+*.obj
+*.dblite
 *.o2
 *.s
 tmp.*

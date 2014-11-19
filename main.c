@@ -32,7 +32,7 @@ static void usage(void) {
             "  -D name           Predefine name as a macro\n"
             "  -D name=def\n"
             "  -S                Stop before assembly (default)\n"
-            "  -c                Do not run linker (default)\n"
+			"  -c<inputfile>     Compile but do not link (default)\n"
             "  -U name           Undefine name\n"
             "  -fdump-ast        print AST\n"
             "  -fdump-stack      Print stacktrace\n"
@@ -46,9 +46,11 @@ static void usage(void) {
             "  -m64              Output 64-bit code (default)\n"
             "  -w                Disable all warnings\n"
 			"  -y                Don't delete temporary files\n"
+			"  -F<string>        Ignored (/Fo MSVS option)\n"
+			"  -n<string>        Ignored (/nologo MSVS option)\n"
             "  -h                print this help\n"
             "\n"
-            "One of -a, -c, -E or -S must be specified.\n\n");
+            "-c must be specified.\n\n");
     exit(1);
 }
 
@@ -127,7 +129,7 @@ static void parse_m_arg(char *s) {
 static void parseopt(int argc, char **argv) {
     cppdefs = make_buffer();
     for (;;) {
-        int opt = getopt(argc, argv, "I:ED:O:SU:W:acd:f:gm:o:hwy");
+		int opt = getopt(argc, argv, "I:ED:O:SU:W:ac:d:f:gm:o:hw:ynF:");
         if (opt == -1)
             break;
         switch (opt) {
@@ -160,6 +162,7 @@ static void parseopt(int argc, char **argv) {
             break;
         case 'c':
             dontlink = true;
+			inputfile = optarg;
             break;
 		case 'y':
 			dontclean = true;
@@ -181,17 +184,18 @@ static void parseopt(int argc, char **argv) {
         case 'w':
             enable_warning = false;
             break;
+		case 'F':
+		case 'n':
+			//ignoring args. we have these dummy options to be compatible with SCons/MSVC
+			break;
         case 'h':
         default:
             usage();
         }
     }
-    if (optind != argc - 1)
-        usage();
 
-    if (!dumpast && !cpponly && !dumpasm && !dontlink)
-        error("One of -a, -c, -E or -S must be specified");
-    inputfile = argv[optind];
+    if (!inputfile)
+        error("-c must be specified");
 }
 
 char *get_base_file(void) {

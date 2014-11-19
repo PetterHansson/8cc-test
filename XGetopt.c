@@ -132,7 +132,7 @@ int getopt(int argc, char * const argv[], const char * optstring)
 		if (optind == 0)
 			optind++;
 
-		if (optind >= argc || argv[optind][0] != '-' || argv[optind][1] == '\0')
+		if (optind >= argc || (argv[optind][0] != '-' && argv[optind][0] != '/') || argv[optind][1] == '\0')
 		{
 			optarg = 0;
 			if (optind < argc)
