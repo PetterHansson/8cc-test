@@ -14,9 +14,19 @@
 bool dumpstack = false;
 bool dumpsource = true;
 
+#if WIN32
+static char *REGS[] = {"rcx", "rdx", "r8", "r9"};
+static char *SREGS[] = {"cl", "dl", "r8b", "r9b"};
+static char *MREGS[] = {"ecx", "edx", "r8d", "r9d"};
+#define NFLOREGS	4
+#else
 static char *REGS[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static char *SREGS[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
 static char *MREGS[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
+#define NFLOREGS	8
+#endif
+#define NREGS	(sizeof(REGS) / sizeof(*REGS))
+
 static int TAB = 8;
 static Vector _functions;
 static Vector *functions = &_functions;
@@ -36,7 +46,11 @@ static void emit_decl_init(Vector *inits, int off);
 static void do_emit_data(Vector *inits, int size, int off, int depth);
 static void emit_data(Node *v, int off, int depth);
 
+#if WIN32
+#define REGAREA_SIZE 96
+#else
 #define REGAREA_SIZE 176
+#endif
 
 #define emit(...)        emitf(__LINE__, "\t" __VA_ARGS__)
 #define emit_noindent(...)  emitf(__LINE__, __VA_ARGS__)
@@ -558,7 +572,7 @@ static void emit_save_literal(Node *node, Type *totype, int off) {
         break;
     }
     case KIND_FLOAT: {
-        float fval = node->fval;
+        float fval = (float)node->fval;
         emit("movl $%u, %d(#rbp)", *(uint32_t *)&fval, off);
         break;
     }
@@ -691,7 +705,7 @@ static void emit_literal(Node *node) {
     case KIND_FLOAT: {
         if (!node->flabel) {
             node->flabel = make_label();
-            float fval = node->fval;
+            float fval = (float)node->fval;
             emit_noindent(".data");
             emit_label(node->flabel);
             emit(".long %d", *(uint32_t *)&fval);
@@ -885,7 +899,7 @@ static bool maybe_emit_builtin(Node *node) {
 static void classify_args(Vector *ints, Vector *floats, Vector *rest, Vector *args) {
     SAVE;
     int ireg = 0, xreg = 0;
-    int imax = 6, xmax = 8;
+    int imax = NREGS, xmax = NFLOREGS;
     for (int i = 0; i < vec_len(args); i++) {
         Node *v = vec_get(args, i);
         if (v->ty->kind == KIND_STRUCT)
@@ -899,8 +913,8 @@ static void classify_args(Vector *ints, Vector *floats, Vector *rest, Vector *ar
 
 static void save_arg_regs(int nints, int nfloats) {
     SAVE;
-    assert(nints <= 6);
-    assert(nfloats <= 8);
+    assert(nints <= NREGS);
+    assert(nfloats <= NFLOREGS);
     for (int i = 0; i < nints; i++)
         push(REGS[i]);
     for (int i = 1; i < nfloats; i++)
@@ -1277,7 +1291,7 @@ static void emit_data_charptr(char *s, int depth) {
 static void emit_data_primtype(Type *ty, Node *val, int depth) {
     switch (ty->kind) {
     case KIND_FLOAT: {
-        float f = val->fval;
+        float f = (float)val->fval;
         emit(".long %d", *(uint32_t *)&f);
         break;
     }
@@ -1386,7 +1400,17 @@ static void emit_global_var(Node *v) {
 }
 
 static int emit_regsave_area(void) {
-    emit("sub $%d, #rsp", REGAREA_SIZE);
+	emit("sub $%d, #rsp", REGAREA_SIZE);
+#if WIN32
+	emit("mov #rcx, (#rsp)");
+	emit("mov #rdx, 8(#rsp)");
+	emit("mov #r8, 16(#rsp)");
+	emit("mov #r9, 24(#rsp)");
+	emit("movaps #xmm0, 32(#rsp)");
+	emit("movaps #xmm1, 48(#rsp)");
+	emit("movaps #xmm2, 64(#rsp)");
+	emit("movaps #xmm3, 80(#rsp)");
+#else
     emit("mov #rdi, (#rsp)");
     emit("mov #rsi, 8(#rsp)");
     emit("mov #rdx, 16(#rsp)");
@@ -1401,6 +1425,7 @@ static int emit_regsave_area(void) {
     emit("movaps #xmm5, 128(#rsp)");
     emit("movaps #xmm6, 144(#rsp)");
     emit("movaps #xmm7, 160(#rsp)");
+#endif
     return REGAREA_SIZE;
 }
 
@@ -1416,7 +1441,7 @@ static void push_func_params(Vector *params, int off) {
             off -= size;
             arg += size / 8;
         } else if (is_flotype(v->ty)) {
-            if (xreg >= 8) {
+            if (xreg >= NFLOREGS) {
                 emit("mov %d(#rbp), #rax", arg++ * 8);
                 push("rax");
             } else {
@@ -1424,7 +1449,7 @@ static void push_func_params(Vector *params, int off) {
             }
             off -= 8;
         } else {
-            if (ireg >= 6) {
+            if (ireg >= NREGS) {
                 if (v->ty->kind == KIND_BOOL) {
                     emit("mov %d(#rbp), #al", arg++ * 8);
                     emit("movzx #al, #eax");
