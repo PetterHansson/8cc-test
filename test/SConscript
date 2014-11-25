@@ -1,5 +1,9 @@
 SConscript(['main/SConscript'])
-env = Environment(CC = '8cc', LIBS=['msvcrt'], LINKFLAGS='/LARGEADDRESSAWARE:NO', CPPPATH='.', CCFLAGS='/y')
+env = Environment(CC = '8cc', LIBS=['msvcrt'], CPPPATH='.', CCFLAGS='/y',
+	LINKFLAGS='/LARGEADDRESSAWARE:NO /DEBUG /MACHINE:X64 /OPT:REF /INCREMENTAL:NO /SUBSYSTEM:CONSOLE /ENTRY:main')
+
+printTestProgram = env.Program(['print.c', 'main/testmain.obj']),
+printTest = env.Command('print.test', printTestProgram, "$SOURCE > $TARGET 2>&1")	
 
 testSources = [
 	#'align',
@@ -44,4 +48,4 @@ testSources = [
 for testSource in testSources:
 	testProgram = env.Program([testSource + '.c', 'main/testmain.obj']),
 	test = env.Command(testSource + '.test', testProgram, "$SOURCE > $TARGET 2>&1")
-	env.Depends(test, testProgram)
+	Depends(testProgram, printTest)
