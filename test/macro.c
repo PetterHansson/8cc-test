@@ -4,8 +4,7 @@
 #include <stddef.h>
 #include <string.h>
 #include "test.h"
-
-static void special(void) {
+void special(void) {
     expect_string("test/macro.c", __FILE__);
     expect(10, __LINE__);
     expect(11, strlen(__DATE__));
@@ -20,8 +19,7 @@ static void special(void) {
     expect(1, !!strstr(__TIMESTAMP__, date));
 #endif
 }
-
-static void include(void) {
+void include(void) {
 #include "macro1.h"
     expect_string("macro1", MACRO_1);
 
@@ -38,8 +36,7 @@ static void include(void) {
 # error test failed
 #endif
 }
-
-static void predefined(void) {
+void predefined(void) {
 #ifdef __8cc__
     expect(1, __8cc__);
     expect(1, __STDC_NO_ATOMICS__);
@@ -93,23 +90,20 @@ static void predefined(void) {
 #define ONE 1
 #define TWO ONE + ONE
 #define LOOP LOOP
-
-static void simple(void) {
+void simple(void) {
     expect(1, ONE);
     expect(2, TWO);
 }
 
 #define VAR1 VAR2
 #define VAR2 VAR1
-
-static void loop(void) {
+void loop(void) {
     int VAR1 = 1;
     int VAR2 = 2;
     expect(1, VAR1);
     expect(2, VAR2);
 }
-
-static void undef(void) {
+void undef(void) {
     int a = 3;
 #define a 10
     expect(10, a);
@@ -119,8 +113,7 @@ static void undef(void) {
     expect(16, a);
 #undef a
 }
-
-static void cond_incl(void) {
+void cond_incl(void) {
     int a = 1;
 #if 0
     a = 2;
@@ -184,8 +177,7 @@ xyz "\"/*" '\'/*'
 #endif
     expect(150, a);
 }
-
-static void const_expr(void) {
+void const_expr(void) {
     int a = 1;
 #if 0 + 1
     a = 2;
@@ -272,8 +264,7 @@ static void const_expr(void) {
 #endif
     expect(12, a);
 }
-
-static void defined(void) {
+void defined(void) {
     int a = 0;
 #if defined ZERO
     a = 1;
@@ -290,8 +281,7 @@ static void defined(void) {
 #endif
     expect(4, a);
 }
-
-static void ifdef(void) {
+void ifdef(void) {
     int a = 0;
 #ifdef ONE
     a = 1;
@@ -331,8 +321,7 @@ int plus(int a, int b) {
 int minus(int a, int b) {
     return a - b;
 }
-
-static void funclike(void) {
+void funclike(void) {
 #define stringify(x) #x
     expect_string("5", stringify(5));
     expect_string("x", stringify(x));
@@ -423,8 +412,7 @@ static void funclike(void) {
 #define m17(x) stringify(.x . x)
     expect_string(".3 . 3", m17(3));
 }
-
-static void empty(void) {
+void empty(void) {
 #define EMPTY
     expect(1, 1 EMPTY);
 #define EMPTY2(x)
@@ -432,31 +420,26 @@ static void empty(void) {
     expect(2, 2 EMPTY2(foo bar));
     expect(2, 2 EMPTY2(((()))));
 }
-
-static void noarg(void) {
+void noarg(void) {
 #define NOARG() 55
     expect(55, NOARG());
 }
-
-static void line(void) {
+void line(void) {
 #line 99
     expect(99, __LINE__);
 #line 199 "foo"
     expect(199, __LINE__);
     expect_string("foo", __FILE__);
 }
-
-static void null(void) {
+void null(void) {
     #
 }
-
-static void counter(void) {
+void counter(void) {
     expect(0, __COUNTER__);
     expect(1, __COUNTER__);
     expect(2, __COUNTER__);
 }
-
-static void gnuext(void) {
+void gnuext(void) {
 #define m11(x, y...) stringify(x + y)
     expect_string("2 + 18", m11(2, 18));
     expect_string("2 +", m11(2));

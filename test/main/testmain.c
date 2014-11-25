@@ -29,8 +29,7 @@ void print(char *s) {
 void printfail(void) {
     printf("Failed\n");
 }
-
-static void doexit(int code)
+void doexit(int code)
 {
 	//TODO: main isn't being handled correctly, hence requirement for exit and flush. need to check what crt should do
 	fflush(stdout);

@@ -2,8 +2,7 @@
 // This program is free software licensed under the MIT license.
 
 #include "test.h"
-
-static void expects(short a, short b) {
+void expects(short a, short b) {
     if (!(a == b)) {
         printf("Failed\n");
         printf("  %d expected, but got %d\n", a, b);

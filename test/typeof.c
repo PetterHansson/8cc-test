@@ -2,15 +2,13 @@
 // This program is free software licensed under the MIT license.
 
 #include "test.h"
-
-static void test_basic(void) {
+void test_basic(void) {
     typeof(int) a = 5;
     expect(5, a);
     typeof(a) b = 6;
     expect(6, b);
 }
-
-static void test_array(void) {
+void test_array(void) {
     char a[] = "abc";
     typeof(a) b = "de";
     expect_string("de", b);
@@ -23,8 +21,7 @@ static void test_array(void) {
     CHAR z = 'z';
     expect('z', z);
 }
-
-static void test_alt(void) {
+void test_alt(void) {
     __typeof__(int) a = 10;
     expect(10, a);
 }

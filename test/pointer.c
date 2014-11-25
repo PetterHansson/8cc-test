@@ -2,36 +2,30 @@
 // This program is free software licensed under the MIT license.
 
 #include "test.h"
-
-static void t1(void) {
+void t1(void) {
     int a = 61;
     int *b = &a;
     expect(61, *b);
 }
-
-static void t2(void) {
+void t2(void) {
     char *c = "ab";
     expect(97, *c);
 }
-
-static void t3(void) {
+void t3(void) {
     char *c = "ab" + 1;
     expect(98, *c);
 }
-
-static void t4(void) {
+void t4(void) {
     char s[] = "xyz";
     char *c = s + 2;
     expect(122, *c);
 }
-
-static void t5(void) {
+void t5(void) {
     char s[] = "xyz";
     *s = 65;
     expect(65, *s);
 }
-
-static void t6(void) {
+void t6(void) {
     struct tag {
         int val;
         struct tag *next;
@@ -46,8 +40,7 @@ static void t6(void) {
     p->next = p->next->next;
     expect(1, p->next->val);
 }
-
-static void subtract(void) {
+void subtract(void) {
     char *p = "abcdefg";
     char *q = p + 5;
     expect(5, q - p);

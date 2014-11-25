@@ -3,8 +3,7 @@
 
 #include "test.h"
 #include <stdbool.h>
-
-static void test_usual_conv(void) {
+void test_usual_conv(void) {
     expect(1, sizeof(bool));
     expect(1, sizeof((char)0));
 

@@ -5,8 +5,7 @@
 
 #define stringify(x) %:x
 #define paste(x, y) x%:%:y
-
-static void digraph(void) {
+void digraph(void) {
     // These tests don't conform to the C standard.
     // N1570 6.4.6.3 says that the digraphs behave the same
     // as the corresponding tokens except for their spellings.
@@ -26,8 +25,7 @@ static void digraph(void) {
     expect(12, paste(1, 2));
 #endif
 }
-
-static void escape(void) {
+void escape(void) {
     int value = 10;
     expect(10, val\
 ue);
@@ -43,17 +41,14 @@ ue);
 #pragma enable_warning
 #endif
 }
-
-static void whitespace(void) {
+void whitespace(void) {
     expect_string("x y", stringify(xy));
 }
-
-static void newline(void) {
+void newline(void) {
      
 #
 }
-
-static void dollar(void) {
+void dollar(void) {
     int $ = 1;
     expect(1, $);
     int $2 = 2;

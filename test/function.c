@@ -7,12 +7,10 @@
 int t1(void) {
     return 77;
 }
-
-static void t2(int a) {
+void t2(int a) {
     expect(79, a);
 }
-
-static void t3(int a, int b, int c, int d, int e, int f) {
+void t3(int a, int b, int c, int d, int e, int f) {
     expect(1, a);
     expect(2, b);
     expect(3, c);
@@ -24,25 +22,21 @@ static void t3(int a, int b, int c, int d, int e, int f) {
 int t4a(int *p) {
     return *p;
 }
-
-static void t4(void) {
+void t4(void) {
     int a[] = { 98 };
     expect(98, t4a(a));
 }
-
-static void t5a(int *p) {
+void t5a(int *p) {
     expect(99, *p); p=p+1;
     expect(98, *p); p=p+1;
     expect(97, *p);
 }
-
-static void t5b(int p[]) {
+void t5b(int p[]) {
     expect(99, *p); p=p+1;
     expect(98, *p); p=p+1;
     expect(97, *p);
 }
-
-static void t5(void) {
+void t5(void) {
     int a[] = {1, 2, 3};
     int *p = a;
     *p = 99; p = p + 1;
@@ -65,8 +59,7 @@ int t7(int a, int b) {
 int t8(int a, ...) {
     expect(23, a);
 }
-
-static void t9(void) {
+void t9(void) {
     return;
 }
 
@@ -85,8 +78,7 @@ int ptrtest2(int a) {
 float ptrtest3(float a) {
     return a * 2;
 }
-
-static void func_ptr_call(void) {
+void func_ptr_call(void) {
     expectf(4, ptrtest3(2));
     int (*p1)(void) = ptrtest1;
     expect(55, p1());
@@ -97,38 +89,32 @@ static void func_ptr_call(void) {
     int (*p4)(void) = &ptrtest1;
     expect(55, (**p4)());
 }
-
-static void func_name(void) {
+void func_name(void) {
     expect_string("func_name", __func__);
     expect_string("func_name", __FUNCTION__);
 }
-
-static int local_static2(void) {
+int local_static2(void) {
     static int x = 1;
     static char y[] = "2";
     static int z;
     z = 3;
     return x++ + (y[0] - '0') + z;
 }
-
-static void local_static3(void) {
+void local_static3(void) {
     static int x = 5;
     static char y[] = "8";
     static int z;
     z = 100;
 }
-
-static void local_static(void) {
+void local_static(void) {
     expect(6, local_static2());
     expect(7, local_static2());
     local_static3();
     expect(8, local_static2());
 }
-
-static void empty(void) {
+void empty(void) {
 }
-
-static void empty2(void) {
+void empty2(void) {
     ;;;
 }
 
@@ -137,8 +123,7 @@ int booltest1(int x);
 bool booltest2(int x) {
     return x;
 }
-
-static void test_bool(void) {
+void test_bool(void) {
     expect(0, booltest1(256));
     expect(1, booltest1(257));
     expect(1, booltest2(512));
@@ -150,12 +135,10 @@ typedef struct { int a, b, c, d; } MyType;
 int sum(MyType x) {
     return x.a + x.b + x.c + x.d;
 }
-
-static void test_struct(void) {
+void test_struct(void) {
     expect(14, sum((MyType){ 2, 3, 4, 5 }));
 }
-
-static void test_funcdesg(void) {
+void test_funcdesg(void) {
     test_funcdesg;
 }
 

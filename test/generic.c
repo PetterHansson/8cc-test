@@ -5,13 +5,11 @@
 #include "test.h"
 
 #ifdef __8cc__
-
-static void test_basic(void) {
+void test_basic(void) {
     expect(1, _Generic(5, int: 1, float: 2));
     expectd(3.0, _Generic(5.0, int: 1, float: 2.0, double: 3.0));
 }
-
-static void test_arith(void) {
+void test_arith(void) {
     typedef signed char schar;
     typedef unsigned char uchar;
     typedef unsigned int uint;
@@ -81,21 +79,18 @@ static void test_arith(void) {
     expect(UL,  T(01777777777777777777777));
 #undef T
 }
-
-static void test_default(void) {
+void test_default(void) {
     expect(1, _Generic(5, default: 1, float: 2));
     expectd(3.0, _Generic(5.0, int: 1, float: 2.0, default: 3.0));
 }
-
-static void test_struct() {
+void test_struct() {
     struct t1 { int x, y; } v1;
     struct t2 { int x, y, z; } v2;
     expect(10, _Generic(v1, struct t1: 10, struct t2: 11, default: 12));
     expect(11, _Generic(v2, struct t1: 10, struct t2: 11, default: 12));
     expect(12, _Generic(99, struct t1: 10, struct t2: 11, default: 12));
 }
-
-static void test_array() {
+void test_array() {
     expect(20, _Generic("abc", char[4]: 20, default: 21));
     expect(22, _Generic((int*)NULL, int *: 22, default: 23));
     expect(23, _Generic((int*)NULL, int[1]: 22, default: 23));

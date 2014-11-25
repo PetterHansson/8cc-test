@@ -3,16 +3,14 @@
 
 #include <stdarg.h>
 #include "test.h"
-
-static void test_builtin(void) {
+void test_builtin(void) {
 #ifdef __8cc__
     expect(0, __builtin_reg_class((int *)0));
     expect(1, __builtin_reg_class((float *)0));
     expect(2, __builtin_reg_class((struct{ int x; }*)0));
 #endif
 }
-
-static void test_int(int a, ...) {
+void test_int(int a, ...) {
     va_list ap;
     va_start(ap, a);
     expect(1, a);
@@ -22,8 +20,7 @@ static void test_int(int a, ...) {
     expect(8, va_arg(ap, int));
     va_end(ap);
 }
-
-static void test_float(float a, ...) {
+void test_float(float a, ...) {
     va_list ap;
     va_start(ap, a);
     expectf(1.0, a);
@@ -32,8 +29,7 @@ static void test_float(float a, ...) {
     expectd(8.0, va_arg(ap, double));
     va_end(ap);
 }
-
-static void test_mix(char *p, ...) {
+void test_mix(char *p, ...) {
     va_list ap;
     va_start(ap, p);
     expect_string("abc", p);
@@ -52,8 +48,7 @@ char *fmt(char *fmt, ...) {
     va_end(ap);
     return buf;
 }
-
-static void test_va_list(void) {
+void test_va_list(void) {
     expect_string("", fmt(""));
     expect_string("3", fmt("%d", 3));
     expect_string("3,1.0,6,2.0,abc", fmt("%d,%.1f,%d,%.1f,%s", 3, 1.0, 6, 2.0, "abc"));

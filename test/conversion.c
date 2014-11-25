@@ -2,8 +2,7 @@
 // This program is free software licensed under the MIT license.
 
 #include "test.h"
-
-static void test_bool(void) {
+void test_bool(void) {
     _Bool v = 3;
     expect(1, v);
     v = 5;
@@ -13,8 +12,7 @@ static void test_bool(void) {
     v = 0.0;
     expect(0, v);
 }
-
-static void test_float(void) {
+void test_float(void) {
     double a = 4.0;
     float b = a;
     expectf(4, b);

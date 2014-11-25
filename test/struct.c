@@ -3,29 +3,25 @@
 
 #include <stddef.h>
 #include "test.h"
-
-static void t1(void) {
+void t1(void) {
     struct { int a; } x;
     x.a = 61;
     expect(61, x.a);
 }
-
-static void t2(void) {
+void t2(void) {
     struct { int a; int b; } x;
     x.a = 61;
     x.b = 2;
     expect(63, x.a + x.b);
 }
-
-static void t3(void) {
+void t3(void) {
     struct { int a; struct { char b; int c; } y; } x;
     x.a = 61;
     x.y.b = 3;
     x.y.c = 3;
     expect(67, x.a + x.y.b + x.y.c);
 }
-
-static void t4(void) {
+void t4(void) {
     struct tag4 { int a; struct { char b; int c; } y; } x;
     struct tag4 s;
     s.a = 61;
@@ -33,36 +29,31 @@ static void t4(void) {
     s.y.c = 3;
     expect(67, s.a + s.y.b + s.y.c);
 }
-
-static void t5(void) {
+void t5(void) {
     struct tag5 { int a; } x;
     struct tag5 *p = &x;
     x.a = 68;
     expect(68, (*p).a);
 }
-
-static void t6(void) {
+void t6(void) {
     struct tag6 { int a; } x;
     struct tag6 *p = &x;
     (*p).a = 69;
     expect(69, x.a);
 }
-
-static void t7(void) {
+void t7(void) {
     struct tag7 { int a; int b; } x;
     struct tag7 *p = &x;
     x.b = 71;
     expect(71, (*p).b);
 }
-
-static void t8(void) {
+void t8(void) {
     struct tag8 { int a; int b; } x;
     struct tag8 *p = &x;
     (*p).b = 72;
     expect(72, x.b);
 }
-
-static void t9(void) {
+void t9(void) {
     struct tag9 { int a[3]; int b[3]; } x;
     x.a[0] = 73;
     expect(73, x.a[0]);
@@ -77,16 +68,14 @@ struct tag10 {
         char b;
         int c;
     } y;
-} v10;
-static void t10(void) {
+} v10;void t10(void) {
     v10.a = 71;
     v10.y.b = 3;
     v10.y.c = 3;
     expect(77, v10.a + v10.y.b + v10.y.c);
 }
 
-struct tag11 { int a; } v11;
-static void t11(void) {
+struct tag11 { int a; } v11;void t11(void) {
     struct tag11 *p = &v11;
     v11.a = 78;
     expect(78, (*p).a);
@@ -101,8 +90,7 @@ static void t11(void) {
 struct tag12 {
     int a;
     int b;
-} x;
-static void t12(void) {
+} x;void t12(void) {
     struct tag12 a[3];
     a[0].a = 83;
     expect(83, a[0].a);
@@ -113,18 +101,15 @@ static void t12(void) {
     int *p = (int *)a;
     expect(85, p[3]);
 }
-
-static void t13(void) {
+void t13(void) {
     struct { char c; } v = { 'a' };
     expect('a', v.c);
 }
-
-static void t14(void) {
+void t14(void) {
     struct { int a[3]; } v = { { 1, 2, 3 } };
     expect(2, v.a[1]);
 }
-
-static void unnamed(void) {
+void unnamed(void) {
     struct {
         union {
             struct { int x; int y; };
@@ -136,8 +121,7 @@ static void unnamed(void) {
     expect(1, v.c[0]);
     expect(7, v.c[4]);
 }
-
-static void assign(void) {
+void assign(void) {
     struct { int a, b, c; short d; char f; } v1, v2;
     v1.a = 3;
     v1.b = 5;
@@ -151,8 +135,7 @@ static void assign(void) {
     expect(9, v2.d);
     expect(11, v2.f);
 }
-
-static void arrow(void) {
+void arrow(void) {
     struct cell { int val; struct cell *next; };
     struct cell v1 = { 5, NULL };
     struct cell v2 = { 6, &v1 };
@@ -170,8 +153,7 @@ static void arrow(void) {
     expect(11, p->next->val);
     expect(12, p->next->next->val);
 }
-
-static void address(void) {
+void address(void) {
     struct tag { int a; struct { int b; } y; } x = { 6, 7 };
     int *p1 = &x.a;
     int *p2 = &x.y.b;
@@ -188,8 +170,7 @@ static void address(void) {
     expect(6, *&xp->a);
     expect(7, *&xp->y.b);
 }
-
-static void incomplete(void) {
+void incomplete(void) {
     struct tag1;
     struct tag2 { struct tag1 *p; };
     struct tag1 { int x; };
@@ -198,8 +179,7 @@ static void incomplete(void) {
     struct tag2 v2 = { &v1 };
     expect(3, v2.p->x);
 }
-
-static void bitfield_basic(void) {
+void bitfield_basic(void) {
     union {
         int i;
         struct { int a:5; int b:5; };
@@ -211,8 +191,7 @@ static void bitfield_basic(void) {
     expect(11, x.b);
     expect(362, x.i); // 11 << 5 + 10 == 362
 }
-
-static void bitfield_mix(void) {
+void bitfield_mix(void) {
     union {
         int i;
         struct { char a:5; int b:5; };
@@ -223,16 +202,14 @@ static void bitfield_mix(void) {
     expect(11, x.b);
     expect(362, x.i);
 }
-
-static void bitfield_union(void) {
+void bitfield_union(void) {
     union { int a : 10; char b: 5; char c: 5; } x;
     x.a = 2;
     expect(2, x.a);
     expect(2, x.b);
     expect(2, x.c);
 }
-
-static void bitfield_unnamed(void) {
+void bitfield_unnamed(void) {
     union {
         int i;
         struct { char a:4; char b:4; char : 8; };
@@ -256,8 +233,7 @@ static void bitfield_unnamed(void) {
 }
 
 struct { char a:4; char b:4; } inittest = { 2, 4 };
-
-static void bitfield_initializer(void) {
+void bitfield_initializer(void) {
     expect(2, inittest.a);
     expect(4, inittest.b);
 
@@ -265,8 +241,7 @@ static void bitfield_initializer(void) {
     expect(2, x.a);
     expect(4, x.b);
 }
-
-static void test_offsetof(void) {
+void test_offsetof(void) {
     struct tag10 { int a, b; };
     expect(0, offsetof(struct tag10, a));
     expect(4, offsetof(struct tag10, b));
@@ -284,8 +259,7 @@ static void test_offsetof(void) {
     expect(2, _Alignof(struct { int : 32; short x; }));
     expect(4, _Alignof(struct { int x; int : 32; }));
 }
-
-static void flexible_member(void) {
+void flexible_member(void) {
     struct { int a, b[]; } x;
     expect(4, sizeof(x));
     struct { int a, b[0]; } y;
@@ -303,8 +277,7 @@ static void flexible_member(void) {
     expect(5, x3.b[3]);
 #endif
 }
-
-static void empty_struct(void) {
+void empty_struct(void) {
     struct tag15 {};
     expect(0, sizeof(struct tag15));
     union tag16 {};

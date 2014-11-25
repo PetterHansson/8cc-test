@@ -3,8 +3,7 @@
 
 #include "test.h"
 #include <stdbool.h>
-
-static void test_primitives(void) {
+void test_primitives(void) {
     expect(1, sizeof(void));
     expect(1, sizeof(test_primitives));
     expect(1, sizeof(char));
@@ -14,22 +13,19 @@ static void test_primitives(void) {
     expect(4, sizeof(int));
     expect(8, sizeof(long));
 }
-
-static void test_pointers(void) {
+void test_pointers(void) {
     expect(8, sizeof(char *));
     expect(8, sizeof(short *));
     expect(8, sizeof(int *));
     expect(8, sizeof(long *));
 }
-
-static void test_unsigned(void) {
+void test_unsigned(void) {
     expect(1, sizeof(unsigned char));
     expect(2, sizeof(unsigned short));
     expect(4, sizeof(unsigned int));
     expect(8, sizeof(unsigned long));
 }
-
-static void test_literals(void) {
+void test_literals(void) {
     expect(4, sizeof 1);
     expect(4, sizeof('a'));
     expect(4, sizeof(1.0f));
@@ -37,15 +33,13 @@ static void test_literals(void) {
     expect(8, sizeof 1.0);
     expect(8, sizeof(1.0));
 }
-
-static void test_arrays(void) {
+void test_arrays(void) {
     expect(1, sizeof(char[1]));
     expect(7, sizeof(char[7]));
     expect(30, sizeof(char[3][10]));
     expect(32, sizeof(int[4][2]));
 }
-
-static void test_vars(void) {
+void test_vars(void) {
     char a[] = { 1, 2, 3 };
     expect(3, sizeof(a));
     char b[] = "abc";
@@ -62,8 +56,7 @@ static void test_vars(void) {
     expect(1, sizeof(***d));
     expect(4, sizeof((int)a));
 }
-
-static void test_struct(void) {
+void test_struct(void) {
     expect(1, sizeof(struct { char a; }));
     expect(3, sizeof(struct { char a[3]; }));
     expect(5, sizeof(struct { char a[5]; }));
@@ -72,8 +65,7 @@ static void test_struct(void) {
     expect(24, sizeof(struct { char a; double b; char c; }));
     expect(24, sizeof(struct { struct { char a; double b; } x; char c; }));
 }
-
-static void test_constexpr(void) {
+void test_constexpr(void) {
     char a[sizeof(char[4])];
     expect(4, sizeof(a));
 }
