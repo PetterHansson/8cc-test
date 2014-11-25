@@ -560,15 +560,15 @@ static void emit_binop(Node *node) {
 
 static void emit_save_literal(Node *node, Type *totype, int off) {
     switch (totype->kind) {
-    case KIND_BOOL:  emit("movb $%d, %d(#rbp)", !!node->ival, off); break;
-    case KIND_CHAR:  emit("movb $%d, %d(#rbp)", node->ival, off); break;
-    case KIND_SHORT: emit("movw $%d, %d(#rbp)", node->ival, off); break;
-    case KIND_INT:   emit("movl $%d, %d(#rbp)", node->ival, off); break;
+    case KIND_BOOL:  emit("movb $%d, %d(#rbp)", !!(int)node->ival, off); break;
+    case KIND_CHAR:  emit("movb $%d, %d(#rbp)", (int)node->ival, off); break;
+    case KIND_SHORT: emit("movw $%d, %d(#rbp)", (int)node->ival, off); break;
+	case KIND_INT:   emit("movl $%d, %d(#rbp)", (int)node->ival, off); break;
     case KIND_LONG:
     case KIND_LLONG:
     case KIND_PTR: {
-        emit("movl $%lu, %d(#rbp)", ((uint64_t)node->ival) & ((1L << 32) - 1), off);
-        emit("movl $%lu, %d(#rbp)", ((uint64_t)node->ival) >> 32, off + 4);
+        emit("movl $%lu, %d(#rbp)", (unsigned)(((uint64_t)node->ival) & ((1L << 32) - 1)), off);
+        emit("movl $%lu, %d(#rbp)", (unsigned)(((uint64_t)node->ival) >> 32, off + 4));
         break;
     }
     case KIND_FLOAT: {
@@ -692,14 +692,14 @@ static void emit_literal(Node *node) {
     switch (node->ty->kind) {
     case KIND_BOOL:
     case KIND_CHAR:
-        emit("mov $%u, #rax", node->ival);
+        emit("mov $%u, #rax", (int)node->ival);
         break;
     case KIND_INT:
-        emit("mov $%u, #rax", node->ival);
+        emit("mov $%u, #rax", (int)node->ival);
         break;
     case KIND_LONG:
     case KIND_LLONG: {
-        emit("mov $%lu, #rax", node->ival);
+        emit("mov $%llu, #rax", node->ival);
         break;
     }
     case KIND_FLOAT: {
@@ -929,6 +929,21 @@ static void restore_arg_regs(int nints, int nfloats) {
         pop(REGS[i]);
 }
 
+static int argsize(const Vector * vals)
+{
+	int r = 0;
+	for (int i = 0; i < vec_len(vals); i++) {
+		Node *v = vec_get(vals, i);
+		if (v->ty->kind == KIND_STRUCT) {
+			r += align(v->ty->size, 8);
+		}
+		else {
+			r += 8;
+		}
+	}
+	return r;
+}
+
 static int emit_args(Vector *vals) {
     SAVE;
     int r = 0;
@@ -986,7 +1001,14 @@ static void emit_func_call(Node *node) {
         stackpos += 8;
     }
 
+#ifdef WIN32
+	int addsize = 32 - argsize(node->args);
+	if (ftype->hasva && addsize > 0) emit("sub $%d, #rsp", addsize);
+	int restsize = emit_args(vec_reverse(node->args)); //must have shadow space for all args. would actually not be necessary to use shadow space in optimized program
+	if (ftype->hasva && restsize < 32) restsize = 32; //not yet sure why I got crashes in external non-VA functions
+#else
     int restsize = emit_args(vec_reverse(rest));
+#endif
     if (isptr) {
         emit_expr(node->fptr);
         push("rax");
@@ -1433,6 +1455,9 @@ static void push_func_params(Vector *params, int off) {
     int ireg = 0;
     int xreg = 0;
     int arg = 2;
+#if WIN32
+	arg += NREGS;
+#endif
     for (int i = 0; i < vec_len(params); i++) {
         Node *v = vec_get(params, i);
         if (v->ty->kind == KIND_STRUCT) {

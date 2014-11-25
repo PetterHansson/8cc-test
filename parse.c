@@ -738,7 +738,7 @@ static Node *read_int(char *s) {
     // C11 6.4.4.1p5: decimal constant type is int, long, or long long.
     // In 8cc, long and long long are the same size.
     if (base == 10) {
-        long val = STRTOINT(digits, p, base);
+        long val = STRTOLL(digits, p, base);
         Type *t = !(val & ~(long)INT_MAX) ? type_int : type_long;
         return ast_inttype(t, val);
     }

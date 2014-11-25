@@ -19,6 +19,7 @@ nqueen
 *.user
 *.pdb
 *.exe
+*.txt
 Debug/
 Release/
 tempinclude/
