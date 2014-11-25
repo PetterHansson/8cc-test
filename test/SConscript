@@ -7,7 +7,7 @@ printTest = env.Command('print.test', printTestProgram, "$SOURCE > $TARGET 2>&1"
 
 testSources = [
 	#'align',
-	#'arith',
+	'arith',
 	'assign',
 	'bitop',
 	'builtin',

@@ -1055,10 +1055,9 @@ static void emit_func_call(Node *node) {
     }
 
 #ifdef WIN32
-	int addsize = 32 - argsize(node->args);
-	if (ftype->hasva && addsize > 0) emit("sub $%d, #rsp", addsize);
-	int restsize = emit_args(vec_reverse(node->args)); //must have shadow space for all args. would actually not be necessary to use shadow space in optimized program
-	if (ftype->hasva && restsize < 32) restsize = 32; //not yet sure why I got crashes in external non-VA functions
+	//must have shadow space for all args, even if passed in regs
+	int restsize = 32 + emit_args(vec_reverse(rest));
+	emit("sub $32, #rsp");
 #else
     int restsize = emit_args(vec_reverse(rest));
 #endif
