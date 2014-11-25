@@ -578,8 +578,8 @@ static void emit_save_literal(Node *node, Type *totype, int off) {
     }
     case KIND_DOUBLE:
     case KIND_LDOUBLE: {
-        emit("movl $%lu, %d(#rbp)", *(uint64_t *)&node->fval & ((1L << 32) - 1), off);
-        emit("movl $%lu, %d(#rbp)", *(uint64_t *)&node->fval >> 32, off + 4);
+        emit("movl $%llu, %d(#rbp)", *(uint64_t *)&node->fval & ((1L << 32) - 1), off);
+        emit("movl $%llu, %d(#rbp)", *(uint64_t *)&node->fval >> 32, off + 4);
         break;
     }
     default:
@@ -720,7 +720,7 @@ static void emit_literal(Node *node) {
             node->flabel = make_label();
             emit_noindent(".data");
             emit_label(node->flabel);
-            emit(".quad %lu", *(uint64_t *)&node->fval);
+            emit(".quad %llu", *(uint64_t *)&node->fval);
             emit_noindent(".text");
         }
         emit("movsd %s(#rip), #xmm0", node->flabel);
@@ -898,17 +898,35 @@ static bool maybe_emit_builtin(Node *node) {
 
 static void classify_args(Vector *ints, Vector *floats, Vector *rest, Vector *args) {
     SAVE;
-    int ireg = 0, xreg = 0;
+	int icntr = 0;
+#if WIN32
+	int * ireg = &icntr, * xreg = &icntr;
+#else
+	int xcntr = 0;
+	int * ireg = &icntr, *xreg = &xcntr;
+#endif
     int imax = NREGS, xmax = NFLOREGS;
     for (int i = 0; i < vec_len(args); i++) {
         Node *v = vec_get(args, i);
         if (v->ty->kind == KIND_STRUCT)
             vec_push(rest, v);
         else if (is_flotype(v->ty))
-            vec_push((xreg++ < xmax) ? floats : rest, v);
+            vec_push(((*xreg)++ < xmax) ? floats : rest, v);
         else
-            vec_push((ireg++ < imax) ? ints : rest, v);
+            vec_push(((*ireg)++ < imax) ? ints : rest, v);
     }
+}
+
+static void save_arg_regs_win64(const Vector * v) {
+	SAVE;
+	int n = vec_len(v);
+	assert(n <= NREGS);
+	for (int i = 0; i < n; i++)
+	{
+		Node * node = (Node*) vec_get(v, i);
+		if (is_flotype(node->ty)) push_xmm(i);
+		else push(REGS[i]);
+	}
 }
 
 static void save_arg_regs(int nints, int nfloats) {
@@ -919,6 +937,18 @@ static void save_arg_regs(int nints, int nfloats) {
         push(REGS[i]);
     for (int i = 1; i < nfloats; i++)
         push_xmm(i);
+}
+
+static void restore_arg_regs_win64(const Vector * v) {
+	SAVE;
+	int n = vec_len(v);
+	assert(n <= NREGS);
+	for (int i = 0; i < n; i++)
+	{
+		Node * node = (Node*)vec_get(v, i);
+		if (is_flotype(node->ty)) pop_xmm(i);
+		else pop(REGS[i]);
+	}
 }
 
 static void restore_arg_regs(int nints, int nfloats) {
@@ -965,6 +995,18 @@ static int emit_args(Vector *vals) {
     return r;
 }
 
+static void pop_args_win64(const Vector * v)
+{
+	SAVE;
+	int n = vec_len(v);
+	for (int i = n - 1; i >= 0; --i)
+	{
+		Node * node = vec_get(v, i);
+		if (is_flotype(node->ty)) pop_xmm(i);
+		else pop(REGS[i]);
+	}
+}
+
 static void pop_int_args(int nints) {
     SAVE;
     for (int i = nints - 1; i >= 0; i--)
@@ -990,10 +1032,21 @@ static void emit_func_call(Node *node) {
     Type *ftype = isptr ? node->fptr->ty->ptr : node->ftype;
 
     Vector *ints = make_vector();
+#if WIN32
+	//key observation: on Win64 arguments share same "count" (max 4 in total)
+	//we use same arrays for them to be able to write slightly more general code
+	Vector *floats = ints;
+#else
     Vector *floats = make_vector();
+#endif
     Vector *rest = make_vector();
+
     classify_args(ints, floats, rest, node->args);
+#if WIN32
+	save_arg_regs_win64(ints);
+#else
     save_arg_regs(vec_len(ints), vec_len(floats));
+#endif
 
     bool padding = stackpos % 16;
     if (padding) {
@@ -1013,14 +1066,31 @@ static void emit_func_call(Node *node) {
         emit_expr(node->fptr);
         push("rax");
     }
+#if WIN32
     emit_args(ints);
+	pop_args_win64(ints);
+#else
+	emit_args(ints);
     emit_args(floats);
-    pop_float_args(vec_len(floats));
-    pop_int_args(vec_len(ints));
+	pop_float_args(vec_len(floats));
+	pop_int_args(vec_len(ints));
+#endif
 
     if (isptr) pop("r11");
-    if (ftype->hasva)
-        emit("mov $%u, #eax", vec_len(floats));
+	if (ftype->hasva)
+	{
+		int nfloats = vec_len(floats);
+#if WIN32
+		int n = nfloats;
+		nfloats = 0;
+		for (int i = 0; i < n; ++i)
+		{
+			Node * node = (Node*)vec_get(floats, i);
+			if (is_flotype(node->ty)) nfloats += 1;
+		}
+#endif
+		emit("mov $%u, #eax", nfloats);
+	}
 
     if (isptr)
         emit("call *#r11");
@@ -1035,7 +1105,11 @@ static void emit_func_call(Node *node) {
         emit("add $8, #rsp");
         stackpos -= 8;
     }
+#if WIN32
+	restore_arg_regs_win64(ints);
+#else
     restore_arg_regs(vec_len(ints), vec_len(floats));
+#endif
     assert(opos == stackpos);
 }
 
@@ -1318,7 +1392,7 @@ static void emit_data_primtype(Type *ty, Node *val, int depth) {
         break;
     }
     case KIND_DOUBLE: {
-        emit(".quad %ld", *(uint64_t *)&val->fval);
+        emit(".quad %lld", *(uint64_t *)&val->fval);
         break;
     }
     case KIND_BOOL:
@@ -1452,8 +1526,14 @@ static int emit_regsave_area(void) {
 }
 
 static void push_func_params(Vector *params, int off) {
-    int ireg = 0;
-    int xreg = 0;
+	int icntr = 0;
+#if WIN32
+	int * ireg = &icntr, *xreg = &icntr;
+#else
+	int xcntr = 0;
+	int * ireg = &icntr, *xreg = &xcntr;
+#endif
+
     int arg = 2;
 #if WIN32
 	arg += NREGS;
@@ -1466,15 +1546,15 @@ static void push_func_params(Vector *params, int off) {
             off -= size;
             arg += size / 8;
         } else if (is_flotype(v->ty)) {
-            if (xreg >= NFLOREGS) {
+            if (*xreg >= NFLOREGS) {
                 emit("mov %d(#rbp), #rax", arg++ * 8);
                 push("rax");
             } else {
-                push_xmm(xreg++);
+                push_xmm((*xreg)++);
             }
             off -= 8;
         } else {
-            if (ireg >= NREGS) {
+            if (*ireg >= NREGS) {
                 if (v->ty->kind == KIND_BOOL) {
                     emit("mov %d(#rbp), #al", arg++ * 8);
                     emit("movzx #al, #eax");
@@ -1484,8 +1564,8 @@ static void push_func_params(Vector *params, int off) {
                 push("rax");
             } else {
                 if (v->ty->kind == KIND_BOOL)
-                    emit("movzx #%s, #%s", SREGS[ireg], MREGS[ireg]);
-                push(REGS[ireg++]);
+                    emit("movzx #%s, #%s", SREGS[*ireg], MREGS[*ireg]);
+                push(REGS[(*ireg)++]);
             }
             off -= 8;
         }

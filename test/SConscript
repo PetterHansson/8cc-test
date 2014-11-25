@@ -19,7 +19,7 @@ testSources = [
 	'enum',
 	'extern',
 	#'float',
-	#'funcargs',
+	'funcargs',
 	#'function',
 	#'generic',
 	#'global',
