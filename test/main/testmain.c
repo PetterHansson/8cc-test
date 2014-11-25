@@ -30,17 +30,25 @@ void printfail(void) {
     printf("Failed\n");
 }
 
+static void doexit(int code)
+{
+	//TODO: main isn't being handled correctly, hence requirement for exit and flush. need to check what crt should do
+	fflush(stdout);
+	fflush(stderr);
+	exit(code);
+}
+
 void ffail(char *file, int line, char *msg) {
     printfail();
     printf("%s:%d: %s\n", file, line, msg);
-    exit(1);
+    doexit(1);
 }
 
 void fexpect(char *file, int line, int a, int b) {
     if (!(a == b)) {
         printfail();
         printf("%s:%d: %d expected, but got %d\n", file, line, a, b);
-        exit(1);
+        doexit(1);
     }
 }
 
@@ -48,7 +56,7 @@ void fexpect_string(char *file, int line, char *a, char *b) {
     if (strcmp(a, b)) {
         printfail();
         printf("%s:%d: \"%s\" expected, but got \"%s\"\n", file, line, a, b);
-        exit(1);
+        doexit(1);
     }
 }
 
@@ -56,7 +64,7 @@ void fexpectf(char *file, int line, float a, float b) {
     if (!(a == b)) {
         printfail();
         printf("%s:%d: %f expected, but got %f\n", file, line, a, b);
-        exit(1);
+        doexit(1);
     }
 }
 
@@ -64,7 +72,7 @@ void fexpectd(char *file, int line, double a, double b) {
     if (!(a == b)) {
         printfail();
         printf("%s:%d: %lf expected, but got %lf\n", file, line, a, b);
-        exit(1);
+        doexit(1);
     }
 }
 
@@ -72,16 +80,13 @@ void fexpectl(char *file, int line, long a, long b) {
     if (!(a == b)) {
         printfail();
         printf("%s:%d: %ld expected, but got %ld\n", file, line, a, b);
-        exit(1);
+        doexit(1);
     }
 }
 
 int main() {
     testmain();
     printf("OK\n");
-	//TODO: main isn't being handled correctly, hence requirement for exit and flush. need to check what crt should do
-	fflush(stdout);
-	fflush(stderr);
-	exit(0);
+	doexit(0);
     return 0;
 }
