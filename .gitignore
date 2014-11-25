@@ -17,6 +17,7 @@ nqueen
 *.opensdf
 *.suo
 *.user
+*.pdb
 *.exe
 Debug/
 Release/

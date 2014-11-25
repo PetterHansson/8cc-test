@@ -1,2 +1,2 @@
-env = Environment(CC = '8cc', LIBS=['msvcrt'], LINKFLAGS='/LARGEADDRESSAWARE:NO')
+env = Environment(CC = '8cc', CCFLAGS='/y', LIBS=['msvcrt'])
 env.Object('testmain.c')
